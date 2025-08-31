@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الحلقات المائية - Water Ring Toss</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: #f8f8f8;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .game-board {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 0 auto 30px;
+            background: linear-gradient(to bottom,
+                    rgba(135, 206, 250, 0.2) 0%,
+                    rgba(30, 144, 255, 0.3) 50%,
+                    rgba(0, 119, 190, 0.4) 100%);
+            border: 12px solid #FFD700;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .water-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at center top, transparent 0%, rgba(255, 255, 255, 0.1) 100%),
+                linear-gradient(180deg, rgba(135, 206, 250, 0.1) 0%, rgba(30, 144, 255, 0.2) 100%);
+            pointer-events: none;
+            animation: waterShimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes waterShimmer {
+
+            0%,
+            100% {
+                opacity: 0.8;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            user-select: none;
+            font-weight: bold;
+        }
+
+        .control-btn:nth-child(1),
+        .control-btn:nth-child(3) {
+            background: linear-gradient(145deg, #FF4444, #CC0000);
+        }
+
+        .control-btn:nth-child(2),
+        .control-btn:nth-child(4) {
+            background: linear-gradient(145deg, #00CED1, #008B8B);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:nth-child(1):active,
+        .control-btn:nth-child(3):active {
+            background: linear-gradient(145deg, #CC0000, #990000);
+        }
+
+        .control-btn:nth-child(2):active,
+        .control-btn:nth-child(4):active {
+            background: linear-gradient(145deg, #008B8B, #006666);
+        }
+
+        .info-panel {
+            background: #FFD700;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .info-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .reset-btn {
+            background: linear-gradient(145deg, #FF4444, #CC0000);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(204, 0, 0, 0.3);
+            font-weight: bold;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(204, 0, 0, 0.4);
+        }
+
+        .force-indicator {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .force-indicator.active {
+            opacity: 1;
+        }
+
+        .force-arrow {
+            position: absolute;
+            width: 60px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            transform-origin: right center;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .force-arrow::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: -6px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 10px 8px 0;
+            border-color: transparent rgba(255, 255, 255, 0.8) transparent transparent;
+        }
+
+        .completion-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 215, 0, 0.95);
+            color: #333;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            z-index: 100;
+            border: 3px solid #FFD700;
+        }
+
+        .completion-message.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .level-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 215, 0, 0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <h1>لعبة الحلقات المائية</h1>
+        <p class="subtitle">اضغط على الأزرار لتحريك الحلقات وتثبيتها على الأعمدة</p>
+
+        <div class="game-board">
+            <canvas id="gameCanvas"></canvas>
+            <div class="water-effect"></div>
+            <div class="force-indicator" id="forceIndicator">
+                <div class="force-arrow" id="forceArrow"></div>
+            </div>
+            <div class="level-indicator" id="levelIndicator">المستوى: 1</div>
+            <div class="completion-message" id="completionMessage">
+                🎉 أحسنت! 🎉<br>
+                <span style="font-size: 18px;">جاري تحميل المستوى التالي...</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="leftBtn">←</button>
+            <button class="control-btn" id="rightBtn">→</button>
+            <button class="control-btn" id="upBtn">↑</button>
+            <button class="control-btn" id="downBtn">↓</button>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-item">
+                <div class="info-label">النقاط</div>
+                <div class="info-value" id="score">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">المحاولات</div>
+                <div class="info-value" id="attempts">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">الحلقات المتبقية</div>
+                <div class="info-value" id="ringsLeft">5</div>
+            </div>
+            <div class="info-item">
+                <button class="reset-btn" onclick="resetGame()">إعادة اللعبة</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const forceIndicator = document.getElementById('forceIndicator');
+        const forceArrow = document.getElementById('forceArrow');
+        const completionMessage = document.getElementById('completionMessage');
+        const levelIndicator = document.getElementById('levelIndicator');
+
+        // ضبط حجم الكانفاس
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // متغيرات اللعبة
+        let score = 0;
+        let attempts = 0;
+        let level = 1;
+        let rings = [];
+        let posts = [];
+        let bubbles = [];
+        let waterWaves = [];
+        let activeForce = null;
+        let selectedRing = null;
+        let gameCompleted = false;
+        let isTransitioning = false;
+
+        // إعدادات الفيزياء المبسطة
+        const physics = {
+            waterResistance: 0.92,
+            pushForce: 3.5,
+            snapDistance: 15,
+            maxSpeed: 8
+        };
+
+        // ألوان الحلقات المحددة
+        const ringColors = ['#FF8C00', '#32CD32', '#FF1493', '#FF4500', '#FF69B4'];
+
+        // فئة الحلقة المبسطة
+        class Ring {
+            constructor(x, y, colorIndex) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = 20;
+                this.innerRadius = 12;
+                this.color = ringColors[colorIndex % ringColors.length];
+                this.onPost = false;
+                this.targetPost = null;
+            }
+
+            update() {
+                if (!this.onPost) {
+                    this.vx *= physics.waterResistance;
+                    this.vy *= physics.waterResistance;
+
+                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    if (speed > physics.maxSpeed) {
+                        this.vx = (this.vx / speed) * physics.maxSpeed;
+                        this.vy = (this.vy / speed) * physics.maxSpeed;
+                    }
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x - this.radius < 0) {
+                        this.x = this.radius;
+                        this.vx = Math.abs(this.vx) * 0.5;
+                        createWaterWave(this.x, this.y);
+                    }
+                    if (this.x + this.radius > canvas.width) {
+                        this.x = canvas.width - this.radius;
+                        this.vx = -Math.abs(this.vx) * 0.5;
+                        createWaterWave(this.x, this.y);
+                    }
+                    if (this.y - this.radius < 0) {
+                        this.y = this.radius;
+                        this.vy = Math.abs(this.vy) * 0.5;
+                        createWaterWave(this.x, this.y);
+                    }
+                    if (this.y + this.radius > canvas.height) {
+                        this.y = canvas.height - this.radius;
+                        this.vy = -Math.abs(this.vy) * 0.5;
+                        createWaterWave(this.x, this.y);
+                    }
+
+                    posts.forEach(post => {
+                        const dx = this.x - post.x;
+                        const dy = this.y - post.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < physics.snapDistance && speed < 2) {
+                            this.onPost = true;
+                            this.targetPost = post;
+                            this.x = post.x;
+                            this.y = post.y;
+                            this.vx = 0;
+                            this.vy = 0;
+                            score += 10;
+                            updateScore();
+                            createBubbles(post.x, post.y);
+
+                            checkGameCompletion();
+                        }
+                    });
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.innerRadius, 0, Math.PI * 2, true);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius / 3,
+                    this.y - this.radius / 3,
+                    0,
+                    this.x,
+                    this.y,
+                    this.radius
+                );
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.innerRadius - 2, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            push(direction) {
+                switch (direction) {
+                    case 'left':
+                        this.vx -= physics.pushForce;
+                        break;
+                    case 'right':
+                        this.vx += physics.pushForce;
+                        break;
+                    case 'up':
+                        this.vy -= physics.pushForce;
+                        break;
+                    case 'down':
+                        this.vy += physics.pushForce;
+                        break;
+                }
+            }
+        }
+
+        // فئة العمود
+        class Post {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 8;
+                this.height = 40;
+            }
+
+            draw() {
+                // رسم العمود الأزرق
+                ctx.fillStyle = '#4169E1';
+                ctx.fillRect(this.x - this.radius, this.y - this.height / 2, this.radius * 2, this.height);
+
+                // رسم القاعدة
+                ctx.beginPath();
+                ctx.arc(this.x, this.y + this.height / 2, this.radius * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#1E90FF';
+                ctx.fill();
+
+                // رسم رأس العمود
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#6495ED';
+                ctx.fill();
+
+                // إضافة توهج أزرق
+                ctx.shadowColor = 'rgba(65, 105, 225, 0.8)';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius - 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#87CEEB';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // فئة الفقاعة
+        class Bubble {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = Math.random() * 4 + 2;
+                this.vy = -Math.random() * 1.5 - 0.5;
+                this.vx = (Math.random() - 0.5) * 1;
+                this.opacity = 0.6;
+            }
+
+            update() {
+                this.y += this.vy;
+                this.x += this.vx;
+                this.opacity -= 0.008;
+
+                if (this.y < 0 || this.opacity <= 0) {
+                    return false;
+                }
+                return true;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius / 3,
+                    this.y - this.radius / 3,
+                    0,
+                    this.x,
+                    this.y,
+                    this.radius
+                );
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                gradient.addColorStop(0.5, 'rgba(135, 206, 250, 0.4)');
+                gradient.addColorStop(1, 'rgba(30, 144, 255, 0.2)');
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // فئة تموج الماء
+        class WaterWave {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.maxRadius = 30;
+                this.opacity = 0.4;
+            }
+
+            update() {
+                this.radius += 1.5;
+                this.opacity -= 0.015;
+
+                if (this.radius > this.maxRadius || this.opacity <= 0) {
+                    return false;
+                }
+                return true;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // توليد موضع عشوائي مع مراعاة الحدود
+        function getRandomPosition(margin = 50) {
+            return {
+                x: margin + Math.random() * (canvas.width - margin * 2),
+                y: margin + Math.random() * (canvas.height - margin * 2)
+            };
+        }
+
+        // التحقق من أن المواضع لا تتداخل
+        function checkPositionOverlap(pos, existingPositions, minDistance = 80) {
+            for (let existing of existingPositions) {
+                const dx = pos.x - existing.x;
+                const dy = pos.y - existing.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < minDistance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // تهيئة اللعبة مع مواضع عشوائية
+        function initGame(randomize = true) {
+            rings = [];
+            posts = [];
+            bubbles = [];
+            waterWaves = [];
+            selectedRing = null;
+            gameCompleted = false;
+
+            if (randomize) {
+                // إنشاء الأعمدة في مواضع عشوائية
+                const postPositions = [];
+                for (let i = 0; i < 5; i++) {
+                    let position;
+                    let attempts = 0;
+                    do {
+                        position = getRandomPosition(60);
+                        attempts++;
+                    } while (checkPositionOverlap(position, postPositions, 100) && attempts < 50);
+
+                    postPositions.push(position);
+                    posts.push(new Post(position.x, position.y));
+                }
+
+                // إنشاء الحلقات في مواضع عشوائية
+                const ringPositions = [];
+                for (let i = 0; i < 5; i++) {
+                    let position;
+                    let attempts = 0;
+                    do {
+                        position = getRandomPosition(40);
+                        attempts++;
+                    } while (checkPositionOverlap(position, [...postPositions, ...ringPositions], 60) && attempts < 50);
+
+                    ringPositions.push(position);
+                    rings.push(new Ring(position.x, position.y, i));
+                }
+            } else {
+                // المواضع الافتراضية
+                const defaultPostPositions = [
+                    { x: canvas.width * 0.25, y: canvas.height * 0.25 },
+                    { x: canvas.width * 0.5, y: canvas.height * 0.4 },
+                    { x: canvas.width * 0.75, y: canvas.height * 0.25 },
+                    { x: canvas.width * 0.35, y: canvas.height * 0.65 },
+                    { x: canvas.width * 0.65, y: canvas.height * 0.65 }
+                ];
+
+                defaultPostPositions.forEach(pos => {
+                    posts.push(new Post(pos.x, pos.y));
+                });
+
+                for (let i = 0; i < 5; i++) {
+                    rings.push(new Ring(
+                        50 + i * 35,
+                        canvas.height - 40,
+                        i
+                    ));
+                }
+            }
+
+            updateUI();
+        }
+
+        // إنشاء فقاعات
+        function createBubbles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    bubbles.push(new Bubble(
+                        x + (Math.random() - 0.5) * 15,
+                        y + (Math.random() - 0.5) * 15
+                    ));
+                }, i * 30);
+            }
+        }
+
+        // إنشاء تموجات الماء
+        function createWaterWave(x, y) {
+            waterWaves.push(new WaterWave(x, y));
+        }
+
+        // تحديث واجهة المستخدم
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('attempts').textContent = attempts;
+            document.getElementById('ringsLeft').textContent = rings.filter(r => !r.onPost).length;
+            document.getElementById('levelIndicator').textContent = `المستوى: ${level}`;
+        }
+
+        // تحديث النقاط
+        function updateScore() {
+            updateUI();
+        }
+
+        // التحقق من اكتمال اللعبة
+        function checkGameCompletion() {
+            const remainingRings = rings.filter(r => !r.onPost).length;
+            if (remainingRings === 0 && !gameCompleted && !isTransitioning) {
+                gameCompleted = true;
+                isTransitioning = true;
+
+                completionMessage.classList.add('show');
+
+                posts.forEach(post => {
+                    createBubbles(post.x, post.y);
+                });
+
+                setTimeout(() => {
+                    completionMessage.classList.remove('show');
+                    level++;
+                    initGame(true);
+                    isTransitioning = false;
+                }, 3000);
+            }
+        }
+
+        // إعادة اللعبة
+        function resetGame() {
+            score = 0;
+            attempts = 0;
+            level = 1;
+            initGame(false);
+        }
+
+        // اختيار أقرب حلقة
+        function selectNearestRing() {
+            let nearestRing = null;
+            let minDistance = Infinity;
+
+            rings.forEach(ring => {
+                if (!ring.onPost) {
+                    const distance = Math.sqrt(
+                        Math.pow(ring.x - canvas.width / 2, 2) +
+                        Math.pow(ring.y - canvas.height / 2, 2)
+                    );
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestRing = ring;
+                    }
+                }
+            });
+
+            selectedRing = nearestRing;
+        }
+
+        // معالجة ضغط الأزرار
+        function handleButtonPress(direction) {
+            if (isTransitioning) return;
+
+            selectNearestRing();
+            if (selectedRing) {
+                selectedRing.push(direction);
+                attempts++;
+                updateUI();
+
+                showForceIndicator(direction);
+            }
+        }
+
+        // إظهار مؤشر القوة
+        function showForceIndicator(direction) {
+            if (!selectedRing) return;
+
+            forceIndicator.classList.add('active');
+            forceIndicator.style.left = selectedRing.x + 'px';
+            forceIndicator.style.top = selectedRing.y + 'px';
+
+            let rotation = 0;
+            switch (direction) {
+                case 'left': rotation = 180; break;
+                case 'right': rotation = 0; break;
+                case 'up': rotation = 270; break;
+                case 'down': rotation = 90; break;
+            }
+            forceArrow.style.transform = `rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                forceIndicator.classList.remove('active');
+            }, 300);
+        }
+
+        // ربط الأحداث
+        document.getElementById('leftBtn').addEventListener('mousedown', () => handleButtonPress('left'));
+        document.getElementById('rightBtn').addEventListener('mousedown', () => handleButtonPress('right'));
+        document.getElementById('upBtn').addEventListener('mousedown', () => handleButtonPress('up'));
+        document.getElementById('downBtn').addEventListener('mousedown', () => handleButtonPress('down'));
+
+        // تأثيرات بصرية للأزرار
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('active'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('active'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('active'));
+        });
+
+        // دعم اللمس
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                btn.dispatchEvent(new Event('mousedown'));
+            });
+
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                btn.dispatchEvent(new Event('mouseup'));
+            });
+        });
+
+        // حلقة اللعبة الرئيسية
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            posts.forEach(post => post.draw());
+
+            rings.forEach(ring => {
+                ring.update();
+                ring.draw();
+            });
+
+            bubbles = bubbles.filter(bubble => {
+                const alive = bubble.update();
+                if (alive) bubble.draw();
+                return alive;
+            });
+
+            waterWaves = waterWaves.filter(wave => {
+                const alive = wave.update();
+                if (alive) wave.draw();
+                return alive;
+            });
+
+            if (Math.random() < 0.01) {
+                bubbles.push(new Bubble(
+                    Math.random() * canvas.width,
+                    canvas.height
+                ));
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // بدء اللعبة
+        initGame(false);
+        gameLoop();
+    </script>
+</body>
+
+</html>
